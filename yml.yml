@@ -1,0 +1,14 @@
+---
+- name: copy and template checking
+  hosts: all
+  vars:
+    my_name: kiran 
+  tasks:
+    - name: copy the file
+      ansible.builtin.copy:
+        src: original.txt
+        dest: /tmp/copy.txt
+    - name: template useing
+      ansible.builtin.template:
+        src: orginal.txt.j2
+        dest: /tmp/2.txt

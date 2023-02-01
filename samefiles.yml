@@ -1,0 +1,10 @@
+---
+- name: loop with only shell files dispalying
+  become: no
+  hosts: all
+  tasks:
+    - name: message and list of same files
+      ansible.builtin.debug:
+        msg: "displaying all list of file"
+      with_fileglob:
+      - "/tmp/test/*.sg" 

@@ -1,0 +1,12 @@
+---
+tomcat_home_dir: /opt/tomcat
+tomcat_user: tomcat    
+tomcat_default_shell: /bin/false
+tomcat_download_url: https://dlcdn.a
+tomcat_download_location: /tmp/apach
+tomcat_service_location: /etc/system
+tomcat_user_location: /opt/tomcat/la
+tomcat_manager_location: /opt/tomcat
+tomcat_host_manager_location: /opt/t
+manager_username: qtdevops
+manager_password: qtdevops

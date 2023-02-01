@@ -1,0 +1,118 @@
+---
+- name: install tomcat9
+  hosts: appserver
+  become: yes
+  vars:
+    tomcat_home_dir: /opt/tomcat
+    tomcat_user: tomcat    
+    tomcat_default_shell: /bin/false
+    tomcat_download_url: https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.71/bin/apache-tomcat-9.0.71.tar.gz
+    tomcat_download_location: /tmp/apache-tomcat-9.0.71.tar.gz
+    tomcat_service_location: /etc/systemd/system/tomcat.service
+    tomcat_user_location: /opt/tomcat/latest/conf/tomcat-users.xml
+    tomcat_manager_location: /opt/tomcat/latest/webapps/manager/META-INF/context.xml
+    tomcat_host_manager_location: /opt/tomcat/latest/webapps/host-manager/META-INF/context.xml
+    manager_username: qtdevops
+    manager_password: qtdevops
+  tasks: 
+    - name: this playbook only for ubuntu and centos
+      ansible.builtin.fail:
+        msg: this playbook will not work for orther operating systems
+      when:
+        - ansible_facts["distribution"] != "Ubuntu"
+        - ansible_facts["distribution"] != "CentOS"
+    - name: update and install tomcat9
+      ansible.builtin.apt:
+        name: "{{ java_package_name }}"
+        update_cache: yes
+        state: present
+      when:
+        - ansible_facts["distribution"] == "Ubuntu"
+    - name: install java 11 on centos
+      ansible.builtin.yum:
+        name: "{{ java_package_name }}"
+        state: present
+      when:
+        - ansible_facts["distribution"] == "CentOS"
+    - ansible.builtin.debug:
+        msg: "creating tomcat user {{ tomcat_user}} tomcat home dir is {{ tomcat_home_dir }}"
+    - name: create a user tomcat
+      ansible.builtin.user:
+        name: "{{ tomcat_user}}"
+        create_home: yes
+        home: "{{ tomcat_home_dir }}"
+        shell: "{{ tomcat_default_shell }}"
+    - ansible.builtin.debug:
+        msg: "tomcat download from {{ tomcat_download_location }} to {{ tomcat_download_url }}"
+    - name: tomcat download 
+      ansible.builtin.get_url:
+        dest: "{{ tomcat_download_location }}"
+        url: "{{ tomcat_download_url }}"
+      notify:
+        - tomcat extracting file
+    - name: Flush handlers
+      meta: flush_handlers    
+    - ansible.builtin.debug:
+        msg: "HERE CREATING THE SYMBOLIC LINK "
+    - name: create a symbolic link
+      ansible.builtin.file:
+        src: "{{ tomcat_home_dir}}/apache-tomcat-9.0.71"
+        dest: "{{ tomcat_home_dir}}/latest"
+        owner: "{{ tomcat_user}}"
+        group: "{{ tomcat_user}}"
+        state: link
+    - name: change ownership as tomcat
+      ansible.builtin.file:
+        path: "{{tomcat_home_dir}}"
+        state: directory
+        recurse: yes
+        owner: "{{ tomcat_user}}"
+        group: "{{ tomcat_user}}"
+    - name: executing shell scripts
+      ansible.builtin.file:
+        path: "{{ item }}"
+        mode: "+x"
+      with_fileglob:
+        - "{{ tomcat_home_dir }}/latest/bin/*.sh"
+    - name: copy the tomcat services
+      ansible.builtin.template:
+       # src: tomcat.service
+        src: tomcat.service.j2
+        dest: "{{ tomcat_service_location }}"
+      notify:
+        - restart tomcat  
+    - name: demon reload systemd
+      ansible.builtin.systemd:
+        name: tomcat
+        daemon_reload: true
+        enabled: true
+        state: started 
+    - name: copy tomcat user xml
+      ansible.builtin.template:
+        src: tomcat-users.xml.j2
+        dest: "{{ tomcat_user_location}}"
+      notify:
+        - restart tomcat  
+    - name: copy manager content xml
+      ansible.builtin.copy:
+        src: manager-context.xml
+        dest: "{{ tomcat_manager_location }}"
+      notify:
+        - restart tomcat  
+    - name: copy host manager xml
+      ansible.builtin.copy:
+        src: host-manager-context.xml
+        dest: "{{ tomcat_host_manager_location }}" 
+      notify:
+        - restart tomcat  
+  handlers:  
+    - name: restart tomcat
+      ansible.builtin.systemd:
+        name: tomcat
+        state: restarted
+    - name: tomcat extracting file
+      ansible.builtin.unarchive:
+        src: "{{ tomcat_download_location }}"
+        dest: "{{ tomcat_home_dir }}"
+        remote_src: yes  
+        

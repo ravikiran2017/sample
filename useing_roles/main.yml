@@ -1,0 +1,6 @@
+---
+- name: useing roles
+  become: yes
+  hosts: appserver
+  roles:
+    - role: role

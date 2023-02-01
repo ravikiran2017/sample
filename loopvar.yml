@@ -1,0 +1,18 @@
+---
+- name: loops useing varibles
+  become: no
+  hosts: localhost
+  vars:
+    files:
+      - /tmp/3.txt
+      - /tmp/4.txt
+      - /tmp/5.txt
+  tasks:
+  - name: creating a file for msg with debug
+    ansible.builtin.debug:
+      msg: " creating a files {{ files}} "
+  - name: useing variables executing loops
+    ansible.builtin.file:
+      name: "{{ item }}"
+      state: touch
+    loop: "{{ files}}"

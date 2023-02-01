@@ -1,0 +1,22 @@
+---
+- name: useing tags
+  become: yes
+  hosts: all
+  gather_facts: no
+  tasks:
+    - name: useing tags first information
+      ansible.builtin.debug:
+        msg: installing git software
+      tags:
+        - debug
+    - name: install git  software
+      ansible.builtin.package:
+        name: git
+        state: present
+      tags:
+        - activity
+    - name: afterinstalling 
+      ansible.builtin.debug:
+        msg: installed git successfully
+      tags:
+        - debug
